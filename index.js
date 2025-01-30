@@ -21,7 +21,7 @@ app.listen(port,()=>{
 ///////////////////////////////////////////
 require("./db");
 require("./Models/User")
-
+require("./Models/Community")
 
 ////////////////////////////
 
