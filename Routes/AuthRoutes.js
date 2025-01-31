@@ -13,6 +13,7 @@ const authMiddleware = require("../Middleware/authMiddleware");
 ////////////////////////////////////////
 const User = mongoose.model("User");
 const Community = mongoose.model("Community");
+
 ///////////////////////////////////////
 
 
@@ -133,9 +134,71 @@ router.post("/joinCommunity", async (req, res) => {
     }
 });
 
+////////////////// get details logged user ////////////////////
 
+router.get('/loggedUserDetails',authMiddleware,async(req,res)=>{
+    try {
+        const userId = req.userId;
+        const user = await User.findById(userId);
 
+        if(typeof userId !== 'string'){
+            return res.status(400).json({error:'Invalid user Id'});
+        }
 
+        if(!user){
+            return res.status(404).json({
+                error:"User not found"
+            });
+        };
+
+        res.json({
+            name:user.name,
+            country:user.country,
+            joinedCommunities: user.joinedCommunities,
+
+        })
+    } catch (error) {
+        console.error("Error fetching user details:" , error);
+        res.status(500).json({error:"Internal server error"});
+    }
+});
+
+// Multer Storage Configuration
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "uploads/");
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + "-" + file.originalname);
+    }
+});
+
+const upload = multer({ storage });
+
+  // Create Post API
+router.post("/createPost", authMiddleware, upload.array("media", 5), async (req, res) => {
+    try {
+        const { caption, community } = req.body;
+        const userId = req.user.userId; // Get user from authMiddleware
+
+        // Store file paths in database
+        const mediaPaths = req.files.map((file) => file.path);
+
+        const newPost = new Post({
+            name: req.user.name, // Assuming `name` is stored in req.user
+            community,
+            caption,
+            media: mediaPaths,
+            createdAt: new Date()
+        });
+
+        await newPost.save();
+        res.status(201).json({ message: "Post created successfully", post: newPost });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
 
 
 module.exports = router;
