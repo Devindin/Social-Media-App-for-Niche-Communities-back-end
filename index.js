@@ -1,43 +1,35 @@
 const express = require('express');
+const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3001;
-const bodyParser = require('body-parser');
+const path = require('path');
 
-app.use(bodyParser.json());
-
-const cors = require('cors');
-
-const corsOptions ={
-    origin:"http://localhost:5173"
-
-};
-
-app.use(cors(corsOptions));
-
-app.listen(port,()=>{
-    console.log(`Server is running on ${port}`);
-});
-
-///////////////////////////////////////////
-require("./db");
-require("./Models/User")
-require("./Models/Community")
-
-////////////////////////////
-
-const athRoutes = require('./Routes/AuthRoutes');
-app.use(athRoutes);
-
-
-/////////////////////////////////////
-
+// Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: "http://localhost:5173" }));
+
+// Database Connection
+require("./db");
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
+// Models
+require("./Models/User");
+require("./Models/Community");
+require("./Models/Post")
+
+// Routes
+const authRoutes = require('./Routes/AuthRoutes');
+app.use(authRoutes);
 
 
-app.use ((error,req,res,next)=>{
-    res.status(error.status || 500).json({error:error.message});
+// Error Handling Middleware
+app.use((error, req, res, next) => {
+    res.status(error.status || 500).json({ error: error.message });
 });
 
+// Start Server
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+});

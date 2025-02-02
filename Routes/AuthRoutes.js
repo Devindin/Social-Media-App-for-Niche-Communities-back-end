@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const bcrypt = require("bcrypt");
 const cors = require("cors");
+const path = require('path');
 
 
 const authMiddleware = require("../Middleware/authMiddleware");
@@ -13,7 +14,7 @@ const authMiddleware = require("../Middleware/authMiddleware");
 ////////////////////////////////////////
 const User = mongoose.model("User");
 const Community = mongoose.model("Community");
-
+const Post = mongoose.model("Post");
 ///////////////////////////////////////
 
 
@@ -68,7 +69,7 @@ router.post("/userLogin",async(req,res)=>{
         }
 
         const token = jwt.sign({userId:user._id},process.env.JWT_SECRET,{
-            expiresIn:"10m",
+            expiresIn:"5m",
         });
 
         res.json({ token, userId: user._id });
@@ -163,42 +164,53 @@ router.get('/loggedUserDetails',authMiddleware,async(req,res)=>{
     }
 });
 
-// Multer Storage Configuration
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, "uploads/");
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + "-" + file.originalname);
-    }
-});
+///////////////////////////////////////////////////////////////////////
 
-const upload = multer({ storage });
-
-  // Create Post API
-router.post("/createPost", authMiddleware, upload.array("media", 5), async (req, res) => {
+router.get("/getUser/:userId", async (req, res) => {
+    const { userId } = req.params;
     try {
-        const { caption, community } = req.body;
-        const userId = req.user.userId; // Get user from authMiddleware
-
-        // Store file paths in database
-        const mediaPaths = req.files.map((file) => file.path);
-
-        const newPost = new Post({
-            name: req.user.name, // Assuming `name` is stored in req.user
-            community,
-            caption,
-            media: mediaPaths,
-            createdAt: new Date()
-        });
-
-        await newPost.save();
-        res.status(201).json({ message: "Post created successfully", post: newPost });
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        res.json({ name: user.name, email: user.email });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Internal Server Error" });
+        console.error("Error fetching user:", error);
+        res.status(500).json({ error: "Internal server error" });
     }
 });
 
+
+/////////////////////////////////////////////////
+
+// Configure multer storage
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, 'uploads/');
+    },
+    filename: function (req, file, cb) {
+      cb(null, Date.now() + '-' + file.originalname);
+    }
+  });
+  
+  const upload = multer({ storage });
+
+// Add new post route
+router.post('/addPost', upload.array('media', 10), async (req, res) => {
+    try {
+      const { name, caption, createdAt } = req.body;
+      const mediaFiles = req.files.map(file => file.filename);
+  
+      const post = new Post({ name, caption, createdAt, media: mediaFiles });
+      await post.save();
+  
+      res.status(201).json({ message: 'Post added successfully', media: mediaFiles });
+    } catch (error) {
+      console.error('Error adding post:', error);
+      res.status(500).json({ error: 'Failed to add post' });
+    }
+  });
+  
+  
 
 module.exports = router;
