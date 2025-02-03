@@ -16,7 +16,10 @@ const postSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
-    }
+    },
+    community: {
+        type: String,
+        required: true}
 });
 
 module.exports = mongoose.model('Post', postSchema);

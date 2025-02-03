@@ -4,7 +4,6 @@ const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const bcrypt = require("bcrypt");
-const cors = require("cors");
 const path = require('path');
 
 
@@ -198,10 +197,10 @@ const storage = multer.diskStorage({
 // Add new post route
 router.post('/addPost', upload.array('media', 10), async (req, res) => {
     try {
-      const { name, caption, createdAt } = req.body;
+      const { name, caption, createdAt ,community } = req.body;
       const mediaFiles = req.files.map(file => file.filename);
   
-      const post = new Post({ name, caption, createdAt, media: mediaFiles });
+      const post = new Post({ name, caption, createdAt,community, media: mediaFiles });
       await post.save();
   
       res.status(201).json({ message: 'Post added successfully', media: mediaFiles });
