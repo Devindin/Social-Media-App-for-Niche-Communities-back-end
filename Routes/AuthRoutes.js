@@ -209,6 +209,20 @@ router.post('/addPost', upload.array('media', 10), async (req, res) => {
       res.status(500).json({ error: 'Failed to add post' });
     }
   });
+
+  //////////////////////////////////////////////////////////////////
+
+
+  router.get("/getPosts/:community", async (req, res) => {
+    const { community } = req.params;
+    try {
+      const posts = await Post.find({ community });
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
   
   
 
