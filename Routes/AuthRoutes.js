@@ -210,7 +210,7 @@ router.post('/addPost', upload.array('media', 10), async (req, res) => {
     }
   });
 
-  //////////////////////////////////////////////////////////////////
+  //////////////////////// get posts//////////////////////////////////////////
 
 
   router.get("/getPosts/:community", async (req, res) => {
@@ -223,6 +223,11 @@ router.post('/addPost', upload.array('media', 10), async (req, res) => {
       res.status(500).json({ error: "Internal server error" });
     }
   });
+
+  
+
+
+  
   
   
 
