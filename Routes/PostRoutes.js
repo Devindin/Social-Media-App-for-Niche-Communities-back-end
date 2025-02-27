@@ -61,4 +61,46 @@ router.post('/posts/:postId/like', authMiddleware, async (req, res) => {
     }
 });
 
+// Add comment to post
+router.post('/posts/:postId/comments', authMiddleware, async (req, res) => {
+    try {
+        const { content } = req.body;
+        const post = await Post.findById(req.params.postId);
+        
+        if (!post) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+
+        const comment = {
+            userId: req.user.id,
+            userName: req.body.userName,
+            content: content
+        };
+
+        post.comments.push(comment);
+        await post.save();
+
+        res.status(201).json(comment);
+    } catch (error) {
+        console.error('Error adding comment:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+
+// Get comments for a post
+router.get('/posts/:postId/comments', async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.postId);
+        if (!post) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+
+        res.json(post.comments);
+    } catch (error) {
+        console.error('Error fetching comments:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 module.exports = router;
