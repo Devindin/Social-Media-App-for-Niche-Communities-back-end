@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Post = mongoose.model('Post');
+const User = require('../Models/User');
 const authMiddleware = require('../Middleware/authMiddleware');
 
 // Like status endpoint
@@ -103,4 +104,47 @@ router.get('/posts/:postId/comments', async (req, res) => {
     }
 });
 
+router.post('/posts/:postId/save', authMiddleware, async (req, res) => {
+    try {
+      const user = await User.findById(req.user.id);
+      const post = await Post.findById(req.params.postId);
+  
+      if (!user || !post) {
+        return res.status(404).json({ error: 'User or post not found' });
+      }
+  
+      const postIndex = user.savedPosts.indexOf(req.params.postId);
+      let saved = false;
+  
+      if (postIndex === -1) {
+        user.savedPosts.push(req.params.postId);
+        saved = true;
+      } else {
+        user.savedPosts.splice(postIndex, 1);
+        saved = false;
+      }
+  
+      await user.save();
+      res.json({ saved });
+    } catch (error) {
+      console.error('Error in save post endpoint:', error);
+      res.status(500).json({ error: 'Server error' });
+    }
+  });
+  
+  router.get('/posts/:postId/save-status', authMiddleware, async (req, res) => {
+    try {
+      const user = await User.findById(req.user.id);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+  
+      const saved = user.savedPosts.includes(req.params.postId);
+      res.json({ saved });
+    } catch (error) {
+      console.error('Error in save-status:', error);
+      res.status(500).json({ error: 'Server error' });
+    }
+  });
+  
 module.exports = router;
